@@ -1,15 +1,15 @@
-all: bin/dhall-files test
+all: bin/dhall-render test
 
-bin/dhall-files:
+bin/dhall-render:
 	maintenance/format.rb
 	maintenance/bootstrap.rb
 	maintenance/update
 
 test:
-	bin/dhall-files examples/files.dhall
+	bin/dhall-render examples/files.dhall
 
 freeze:
 	dhall --ascii freeze --inplace self-install.dhall
 
-.PHONY: all bin/dhall-files test
+.PHONY: all bin/dhall-render test
 

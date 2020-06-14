@@ -1,6 +1,6 @@
 let Tree = ./schemas.dhall
 
-let lib = ./lib/dhall_files.rb as Text ++ "\n"
+let lib = ./lib/dhall_render.rb as Text ++ "\n"
 
 let Options = { beforeRuby : List Text, afterRuby : List Text, path : Text }
 

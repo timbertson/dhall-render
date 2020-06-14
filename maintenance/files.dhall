@@ -4,7 +4,8 @@ in  { files =
       { maintenance/update =
           Tree.SelfInstall.make
             Tree.SelfInstall::{ path = "maintenance/files.dhall" }
-      , bin/dhall-files = Tree.SelfInstall.exe
+      , bin/dhall-render =
+          Tree.SelfInstall.exe // { install = Tree.Install.Write }
       , `.gitattributes` = Tree.TextFile::{
         , contents = "generated/* linguist-generated"
         }
