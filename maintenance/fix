@@ -6,12 +6,7 @@
 require 'find'
 require 'open3'
 
-def trace(cmd)
-	puts " + #{cmd.join(' ')}"
-end
-
-def run(cmd, quiet: false)
-	trace(cmd) unless quiet
+def run(cmd)
 	unless system(*cmd)
 		puts("FAILED: #{cmd.join(' ')}")
 		exit(1)
@@ -24,6 +19,7 @@ def main
 	options = {
 		cache: false,
 		all: false,
+		fix_imports: true,
 	}
 	args = OptionParser.new do |p|
 		p.banner = [
@@ -32,14 +28,18 @@ def main
 			"If no paths are given, the current directory is used",
 			"\n",
 		].join("\n")
-		p.on('--format', "Format files") do ||
-			actions << :format
+
+		action = -> (id, desc) do
+			p.on("--#{id}", desc) { || actions << :format }
 		end
-		p.on('--eval', "Test that all files evaluate") do ||
-			actions << :eval
-		end
-		p.on('--freeze', "Freeze imports") do ||
-			actions << :freeze
+
+		action.call(:format, "Format files")
+		action.call(:eval, "Test that all files evaluate")
+		action.call(:freeze, "Freeze imports")
+		action.call(:lint, "Canonicalize code")
+
+		p.on('--no-fix-imports', "Skip hack for dhall-haskell#1672") do ||
+			options[:fix_imports] = false
 		end
 
 		p.on('--cache', "(used with --freeze)") do ||
@@ -58,35 +58,41 @@ def main
 			next if File.symlink?(path)
 			next unless path.end_with?('.dhall')
 			puts("[#{path}]")
-			cmd = ['dhall', '--file', path]
 
-			# freeze implies format and eval, so just do it first
+			fix_imports = -> () do
+				if options[:fix_imports]
+					# workaround https://github.com/dhall-lang/dhall-haskell/issues/1672
+					contents = File.read(path)
+					fixed = contents.gsub(/(http[^ ]+ using) ([.\\\/~][^ ]+) (sha256:[^ $])/) do |x|
+						match = Regexp.last_match
+						"#{match[1]} (#{match[2]}) #{match[3]}"
+					end
+					if fixed != contents
+						File.write(path, fixed)
+					end
+				end
+			end
+
 			if actions.include?(:freeze)
 				cmd = ['dhall', '--ascii', 'freeze', '--inplace', path]
 				cmd << '--cache' if options.fetch(:cache)
 				cmd << '--all' if options.fetch(:all)
 				run(cmd)
-				next
+				fix_imports.call
 			end
 
 			if actions.include?(:eval)
-				cmd = ['dhall', '--plain', '--output', '/dev/null', '--file', path ]
-				run(cmd, quiet: true)
+				run(['dhall', '--plain', '--output', '/dev/null', '--file', path ])
 			end
 
 			if actions.include?(:format)
-				original = File.read(path)
-				cmd = ['dhall', '--ascii', 'format']
+				run(['dhall', '--ascii', 'format', '--inplace', path])
+				fix_imports.call
+			end
 
-				# We format an anonymous snippet and explicitly write if it differs
-				# instead of using `--inplace`, due to
-				# https://github.com/dhall-lang/dhall-haskell/issues/1855
-				formatted, status = Open3.capture2(*cmd, stdin_data: original)
-				exit(1) unless status.success?
-				if formatted != original
-					trace(cmd + ['--inplace', path])
-					File.write(path, formatted)
-				end
+			if actions.include?(:lint)
+				run(['dhall', '--ascii', 'lint', '--inplace', path])
+				fix_imports.call
 			end
 		end
 	end
