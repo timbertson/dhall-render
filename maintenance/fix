@@ -6,8 +6,8 @@
 require 'find'
 require 'open3'
 
-def run(cmd)
-	unless system(*cmd)
+def run(cmd, opts={})
+	unless system(*cmd, opts)
 		puts("FAILED: #{cmd.join(' ')}")
 		exit(1)
 	end
@@ -29,8 +29,8 @@ def main
 			"\n",
 		].join("\n")
 
-		action = -> (id, desc) do
-			p.on("--#{id}", desc) { || actions << :format }
+		action = -> (action, desc) do
+			p.on("--#{action}", desc) { || actions << action }
 		end
 
 		action.call(:format, "Format files")
@@ -42,6 +42,9 @@ def main
 			options[:fix_imports] = false
 		end
 
+		p.on('--explain', "") do ||
+			options[:explain] = true
+		end
 		p.on('--cache', "(used with --freeze)") do ||
 			options[:cache] = true
 		end
@@ -58,6 +61,8 @@ def main
 			next if File.symlink?(path)
 			next unless path.end_with?('.dhall')
 			puts("[#{path}]")
+			base_cmd = ['dhall', '--ascii']
+			base_cmd << '--explain' if options[:explain]
 
 			fix_imports = -> () do
 				if options[:fix_imports]
@@ -74,7 +79,7 @@ def main
 			end
 
 			if actions.include?(:freeze)
-				cmd = ['dhall', '--ascii', 'freeze', '--inplace', path]
+				cmd = base_cmd + ['freeze', '--inplace', path]
 				cmd << '--cache' if options.fetch(:cache)
 				cmd << '--all' if options.fetch(:all)
 				run(cmd)
@@ -82,16 +87,16 @@ def main
 			end
 
 			if actions.include?(:eval)
-				run(['dhall', '--plain', '--output', '/dev/null', '--file', path ])
+				run(base_cmd + ['--plain', '--file', path], out: File::NULL)
 			end
 
 			if actions.include?(:format)
-				run(['dhall', '--ascii', 'format', '--inplace', path])
+				run(base_cmd + ['format', '--inplace', path])
 				fix_imports.call
 			end
 
 			if actions.include?(:lint)
-				run(['dhall', '--ascii', 'lint', '--inplace', path])
+				run(base_cmd + ['lint', '--inplace', path])
 				fix_imports.call
 			end
 		end
