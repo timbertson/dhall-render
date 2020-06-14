@@ -1,0 +1,95 @@
+#!/usr/bin/env ruby
+
+# Simple script for evaluating, formatting and/or
+# freezing all `.dhall` files in a workspace
+
+require 'find'
+require 'open3'
+
+def trace(cmd)
+	puts " + #{cmd.join(' ')}"
+end
+
+def run(cmd, quiet: false)
+	trace(cmd) unless quiet
+	unless system(*cmd)
+		puts("FAILED: #{cmd.join(' ')}")
+		exit(1)
+	end
+end
+
+def main
+	require 'optparse'
+	actions = []
+	options = {
+		cache: false,
+		all: false,
+	}
+	args = OptionParser.new do |p|
+		p.banner = [
+			"Usage: fix [OPTIONS] [PATH ...]",
+			"",
+			"If no paths are given, the current directory is used",
+			"\n",
+		].join("\n")
+		p.on('--format', "Format files") do ||
+			actions << :format
+		end
+		p.on('--eval', "Test that all files evaluate") do ||
+			actions << :eval
+		end
+		p.on('--freeze', "Freeze imports") do ||
+			actions << :freeze
+		end
+
+		p.on('--cache', "(used with --freeze)") do ||
+			options[:cache] = true
+		end
+		p.on('--all', "(used with --freeze)") do ||
+			options[:all] = true
+		end
+	end.parse(ARGV)
+
+	actions = [:eval, :format] if actions.empty?
+	args << '.' if args.empty?
+
+	args.each do |base|
+		Find.find(base).each do |path|
+			next if File.symlink?(path)
+			next unless path.end_with?('.dhall')
+			puts("[#{path}]")
+			cmd = ['dhall', '--file', path]
+
+			# freeze implies format and eval, so just do it first
+			if actions.include?(:freeze)
+				cmd = ['dhall', '--ascii', 'freeze', '--inplace', path]
+				cmd << '--cache' if options.fetch(:cache)
+				cmd << '--all' if options.fetch(:all)
+				run(cmd)
+				next
+			end
+
+			if actions.include?(:eval)
+				cmd = ['dhall', '--plain', '--output', '/dev/null', '--file', path ]
+				run(cmd, quiet: true)
+			end
+
+			if actions.include?(:format)
+				original = File.read(path)
+				cmd = ['dhall', '--ascii', 'format']
+
+				# We format an anonymous snippet and explicitly write if it differs
+				# instead of using `--inplace`, due to
+				# https://github.com/dhall-lang/dhall-haskell/issues/1855
+				formatted, status = Open3.capture2(*cmd, stdin_data: original)
+				exit(1) unless status.success?
+				if formatted != original
+					trace(cmd + ['--inplace', path])
+					File.write(path, formatted)
+				end
+			end
+		end
+	end
+end
+
+main

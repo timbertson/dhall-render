@@ -1,7 +1,7 @@
 all: bin/dhall-render test
 
 bin/dhall-render:
-	maintenance/format.rb
+	maintenance/fix
 	maintenance/bootstrap.rb
 	maintenance/update
 
