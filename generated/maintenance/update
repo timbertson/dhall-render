@@ -137,7 +137,7 @@ def main
 	options = DEFAULT_OPTIONS.dup
 	args = OptionParser.new do |p|
 		p.banner = [
-			"Usage: json-to-directory-tree [OPTIONS] INPUT_FILE",
+			"Usage: dhall-render [OPTIONS] INPUT_FILE",
 			"",
 			"If no input file given, stdin is used (and --json is assumed).",
 			"\n",
