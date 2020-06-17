@@ -151,20 +151,17 @@ def main
 		p.banner = [
 			"Usage: dhall-render [OPTIONS] INPUT_FILE",
 			"",
-			"If no input file given, stdin is used (and --json is assumed).",
+			"With no arguments, `files.dhall` is assumed",
 			"\n",
 		].join("\n")
 		p.on('--json', "Assume input is already evaluated to JSON") do ||
 			options[:dhall] = false
 		end
 	end.parse(ARGV)
+	args << 'files.dhall' if args.empty?
 
-	if args.empty?
-		process_json($stdin)
-	else
-		args.each do |path|
-			process(path, options)
-		end
+	args.each do |path|
+		process(path, options)
 	end
 end
 

@@ -30,6 +30,24 @@ There's options to control the generation - you can mark files as executable, or
 
 And it's self-hosting. You can use the `SelfInstall` module to add this tool _as a generated file in your repo_, eliminating manual setup. You can even pre-bake the file path to use, resulting in a custom script which doesn't need any arguments.
 
+## How should I bootstrap it?
+
+First, write an initial `files.dhall`:
+
+```dhall
+-- files.dhall
+let Render =
+      https://raw.githubusercontent.com/timbertson/dhall-render/cb082ae4727340abac181fe2101728fdeaa9ba03/package.dhall sha256:4835c8fb6b7e6ddbb261bf48b8194716cf89a0795e18b814329c4726472f90e2
+
+in  { dhall-render = Render.SelfInstall.exe }
+```
+
+Then bootstrap it by sending the contents of the script it's _about_ to create as text to `ruby`:
+
+```
+ruby <(echo '( ./files.dhall ).dhall-render.contents' | dhall text)
+```
+
 ## Do I check in the generated files?
 
 Yes, typically. One of the main uses is for files which must be in the repository, as a contract (e.g. `.travis.yml` or `.github/workflows/*.yml`). So for those you have no choice.

@@ -1,9 +1,9 @@
-let Tree = ../package.dhall
+let Render = ../package.dhall
 
 let SomeConfigFile = { name : Text, age : Natural }
 
 let FromGithub =
-      https://raw.githubusercontent.com/timbertson/dhall-render/e0f1b7106b56481770b45be005dbbd68344893a3/self-install.dhall sha256:4b5d0796e8af4832f25652c5403abcf875c22badaca13ccf605ee1b3ec5094fd
+      https://raw.githubusercontent.com/timbertson/dhall-render/e0f1b7106b56481770b45be005dbbd68344893a3/package.dhall sha256:f79f38999c34ed9822a92254989204fcd513c82c8fb0badd86e8fa2289a46efc
 
 let List/map =
       https://prelude.dhall-lang.org/v16.0.0/List/map sha256:dd845ffb4568d40327f2a817eb42d1c6138b929ca758d50bc33112ef3c885680
@@ -15,7 +15,7 @@ let fileList =
     -- where the filenames are dynamic (i.e. Text). When using a file list
     -- each must have a `path` property, which is joined with the key to
     -- make the full path.
-      let File = Tree.File SomeConfigFile
+      let File = Render.File SomeConfigFile
 
       let ages = [ 1, 2, 3 ]
 
@@ -28,31 +28,31 @@ let fileList =
 
       in  List/map Natural File.Type makeFile [ 1, 2, 3 ]
 
-in  { options = Tree.Options::{ destination = "examples/generated" }
+in  { options = Render.Options::{ destination = "examples/generated" }
     , files =
-      { examples/files/hello = Tree.TextFile::{ contents = "Hello!" }
-      , `examples/files/hello.sh` = Tree.Executable::{
+      { examples/files/hello = Render.TextFile::{ contents = "Hello!" }
+      , `examples/files/hello.sh` = Render.Executable::{
         , header = header
         , contents = "echo 'Hello!'"
-        , install = Tree.Install.Write
+        , install = Render.Install.Write
         }
-      , `examples/files/hello-shebang.sh` = Tree.Executable::{
+      , `examples/files/hello-shebang.sh` = Render.Executable::{
         , header = header
         , contents =
             ''
             #!/usr/bin/env bash
             echo 'Hello!${"'"}''
-        , install = Tree.Install.Write
+        , install = Render.Install.Write
         }
-      , `examples/files/config.yml` = (Tree.File SomeConfigFile)::{
+      , `examples/files/config.yml` = (Render.File SomeConfigFile)::{
         , header = header
         , contents = { name = "tim", age = 100 }
         }
-      , `examples/files/config.json` = (Tree.File SomeConfigFile)::{
-        , format = Tree.Format.JSON
+      , `examples/files/config.json` = (Render.File SomeConfigFile)::{
+        , format = Render.Format.JSON
         , contents = { name = "tim", age = 100 }
         }
-      , examples/files/dhall-render = FromGithub.exe
+      , examples/files/dhall-render = FromGithub.SelfInstall.exe
       , examples/files/list = fileList
       }
     }
