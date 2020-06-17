@@ -37,10 +37,12 @@ First, write an initial `files.dhall`:
 ```dhall
 -- files.dhall
 let Render =
-      https://raw.githubusercontent.com/timbertson/dhall-render/cb082ae4727340abac181fe2101728fdeaa9ba03/package.dhall sha256:4835c8fb6b7e6ddbb261bf48b8194716cf89a0795e18b814329c4726472f90e2
+      https://raw.githubusercontent.com/timbertson/dhall-render/8dba93061bae9054dffda1a497e8c2831d4f480a/package.dhall
 
 in  { dhall-render = Render.SelfInstall.exe }
 ```
+
+(you should replace that commit with the latest from this repository)
 
 Then bootstrap it by sending the contents of the script it's _about_ to create as text to `ruby`:
 
