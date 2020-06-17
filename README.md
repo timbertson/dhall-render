@@ -47,7 +47,7 @@ in  { dhall-render = Render.SelfInstall.exe }
 Then bootstrap it by sending the contents of the script it's _about_ to create as text to `ruby`:
 
 ```
-ruby <(echo '( ./files.dhall ).dhall-render.contents' | dhall text)
+echo '(./files.dhall).dhall-render.contents' | dhall text | ruby
 ```
 
 ## Do I check in the generated files?
