@@ -10,12 +10,14 @@ let Metadata =
       , install : Install
       , header : Optional Text
       , executable : Bool
+      , path : Optional Text
       }
 
 let defaultMetadata =
       { format = Format.YAML
       , install = Install.Symlink
       , header = None Text
+      , path = None Text
       , executable = False
       }
 

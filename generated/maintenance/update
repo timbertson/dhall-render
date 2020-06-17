@@ -36,7 +36,7 @@ def generate_into(generated_tmp:, generated_final:, tree:)
 	FileUtils.rm_rf(generated_tmp)
 	FileUtils.mkdir_p(generated_tmp)
 
-	tree.fetch('files').each do |install_path, doc|
+	generate_file = -> (install_path, doc) do
 		puts "#{install_path}:"
 		install = doc.fetch('install')
 		header = doc['header']
@@ -63,7 +63,19 @@ def generate_into(generated_tmp:, generated_final:, tree:)
 		if executable
 			FileUtils.chmod(0755, tmp_dest)
 		end
-		INSTALLERS.fetch(doc.fetch('install')).call(tmp_dest, final_dest, install_path)
+		INSTALLERS.fetch(install).call(tmp_dest, final_dest, install_path)
+	end
+
+	tree.fetch('files').each do |install_path, doc|
+		if doc.is_a?(Array)
+			doc.each do |entry|
+				generate_file.call(File.join(install_path, entry.fetch('path')), entry)
+			end
+		else
+			sub_path = doc['path']
+			install_path = File.join(install_path, sub_path) unless sub_path.nil?
+			generate_file.call(install_path, doc)
+		end
 	end
 end
 
