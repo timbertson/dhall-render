@@ -6,6 +6,8 @@ require 'find'
 require 'fileutils'
 require 'open3'
 
+@default_path = 'files.dhall'
+
 FORMATTERS = {
 	'YAML' => -> (contents) { contents.to_yaml },
 	'JSON' => -> (contents) { contents.to_json },
@@ -151,14 +153,14 @@ def main
 		p.banner = [
 			"Usage: dhall-render [OPTIONS] INPUT_FILE",
 			"",
-			"With no arguments, `files.dhall` is assumed",
+			"With no arguments, #{@default_path} is assumed",
 			"\n",
 		].join("\n")
 		p.on('--json', "Assume input is already evaluated to JSON") do ||
 			options[:dhall] = false
 		end
 	end.parse(ARGV)
-	args << 'files.dhall' if args.empty?
+	args << @default_path if args.empty?
 
 	args.each do |path|
 		process(path, options)

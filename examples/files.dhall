@@ -2,9 +2,6 @@ let Render = ../package.dhall
 
 let SomeConfigFile = { name : Text, age : Natural }
 
-let FromGithub =
-      https://raw.githubusercontent.com/timbertson/dhall-render/e0f1b7106b56481770b45be005dbbd68344893a3/package.dhall sha256:f79f38999c34ed9822a92254989204fcd513c82c8fb0badd86e8fa2289a46efc
-
 let List/map =
       https://prelude.dhall-lang.org/v16.0.0/List/map sha256:dd845ffb4568d40327f2a817eb42d1c6138b929ca758d50bc33112ef3c885680
 
@@ -52,7 +49,6 @@ in  { options = Render.Options::{ destination = "examples/generated" }
         , format = Render.Format.JSON
         , contents = { name = "tim", age = 100 }
         }
-      , examples/files/dhall-render = FromGithub.SelfInstall.exe
       , examples/files/list = fileList
       }
     }

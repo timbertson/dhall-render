@@ -19,7 +19,11 @@ in  { Tree
     , exe = Tree.Executable::{ contents = lib ++ "main" }
     , make =
             \(options : Options)
-        ->  let processPath = \(path : Text) -> "process(${Text/show path})"
+        ->  let processPath =
+                      \(path : Text)
+                  ->  ''
+                      @default_path = ${Text/show path}
+                      main''
 
             in  Tree.Executable::{
                 , contents =
