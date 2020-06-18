@@ -39,7 +39,7 @@ First, write an initial `files.dhall`:
 let Render =
       https://raw.githubusercontent.com/timbertson/dhall-render/8dba93061bae9054dffda1a497e8c2831d4f480a/package.dhall
 
-in  { dhall-render = Render.SelfInstall.exe }
+in  { files = { dhall-render = Render.SelfInstall.exe } }
 ```
 
 (you should replace that commit with the latest from this repository)
@@ -47,7 +47,15 @@ in  { dhall-render = Render.SelfInstall.exe }
 Then bootstrap it by sending the contents of the script it's _about_ to create as text to `ruby`:
 
 ```
-echo '(./files.dhall).dhall-render.contents' | dhall text | ruby
+echo '(./files.dhall).files.dhall-render.contents' | dhall text | ruby
+```
+
+### What if I really just want a bash one-liner without writing any files first?
+
+Okay :shrug:
+
+```
+echo '( https://raw.githubusercontent.com/timbertson/dhall-render/master/package.dhall ).SelfInstall.exe.contents' | dhall text | ruby /dev/stdin
 ```
 
 ## Do I check in the generated files?

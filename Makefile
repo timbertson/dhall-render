@@ -7,7 +7,11 @@ bin/dhall-render:
 
 test:
 	bin/dhall-render examples/files.dhall
-	echo '(./examples/bootstrap.dhall).dhall-render.contents' | dhall text | ruby -c
+	(cd bootstrap \
+		&& echo '(./files.dhall).files.dhall-render.contents' | dhall text | ruby \
+		&& ./dhall-render)
+	rm -r bootstrap/dhall-render bootstrap/generated
+
 
 freeze:
 	dhall --ascii freeze --inplace self-install.dhall
