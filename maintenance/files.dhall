@@ -1,12 +1,12 @@
-let Tree = ../package.dhall
+let Render = ../package.dhall
 
 in  { files =
       { maintenance/update =
-          Tree.SelfInstall.make
-            Tree.SelfInstall::{ path = "maintenance/files.dhall" }
+          Render.SelfInstall.make
+            Render.SelfInstall::{ path = "maintenance/files.dhall" }
       , bin/dhall-render =
-          Tree.SelfInstall.exe // { install = Tree.Install.Write }
-      , `.gitattributes` = Tree.TextFile::{
+          Render.SelfInstall.exe // { install = Render.Install.Write }
+      , `.gitattributes` = Render.TextFile::{
         , contents = "generated/* linguist-generated"
         }
       }

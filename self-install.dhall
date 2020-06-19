@@ -13,23 +13,24 @@ let Prelude =
           https://prelude.dhall-lang.org/v16.0.0/Text/concatSep sha256:e4401d69918c61b92a4c0288f7d60a6560ca99726138ed8ebc58dca2cd205e58
       }
 
-let makeExe = \(options : Options)
-        ->  let processPath =
-                      \(path : Text)
-                  ->  ''
-                      @default_path = ${Text/show path}
-                      main''
+let makeExe =
+          \(options : Options)
+      ->  let processPath =
+                    \(path : Text)
+                ->  ''
+                    @default_path = ${Text/show path}
+                    main''
 
-            in  Tree.Executable::{
-                , contents =
-                    Prelude.Text.concatSep
-                      "\n"
-                      (   [ lib ]
-                        # options.beforeRuby
-                        # [ processPath options.path ]
-                        # options.afterRuby
-                      )
-                }
+          in  Tree.Executable::{
+              , contents =
+                  Prelude.Text.concatSep
+                    "\n"
+                    (   [ lib ]
+                      # options.beforeRuby
+                      # [ processPath options.path ]
+                      # options.afterRuby
+                    )
+              }
 
 in  { Tree
     , Type = Options

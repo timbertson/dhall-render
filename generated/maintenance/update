@@ -68,7 +68,7 @@ def generate_into(generated_tmp:, generated_final:, tree:)
 		INSTALLERS.fetch(install).call(tmp_dest, final_dest, install_path)
 	end
 
-	tree.fetch('files').each do |install_path, doc|
+	tree.fetch('files').each_pair do |install_path, doc|
 		if doc.is_a?(Array)
 			doc.each do |entry|
 				generate_file.call(File.join(install_path, entry.fetch('path')), entry)

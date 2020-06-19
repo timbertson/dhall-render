@@ -12,7 +12,7 @@ let fileList =
     -- where the filenames are dynamic (i.e. Text). When using a file list
     -- each must have a `path` property, which is joined with the key to
     -- make the full path.
-      let File = Render.File SomeConfigFile
+      let File = Render.YAMLFile SomeConfigFile
 
       let ages = [ 1, 2, 3 ]
 
@@ -41,12 +41,11 @@ in  { options = Render.Options::{ destination = "examples/generated" }
             echo 'Hello!${"'"}''
         , install = Render.Install.Write
         }
-      , `examples/files/config.yml` = (Render.File SomeConfigFile)::{
+      , `examples/files/config.yml` = (Render.YAMLFile SomeConfigFile)::{
         , header = header
         , contents = { name = "tim", age = 100 }
         }
-      , `examples/files/config.json` = (Render.File SomeConfigFile)::{
-        , format = Render.Format.JSON
+      , `examples/files/config.json` = (Render.JSONFile SomeConfigFile)::{
         , contents = { name = "tim", age = 100 }
         }
       , examples/files/list = fileList

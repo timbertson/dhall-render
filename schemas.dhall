@@ -14,25 +14,36 @@ let Metadata =
       }
 
 let defaultMetadata =
-      { format = Format.YAML
-      , install = Install.Symlink
+      { install = Install.Symlink
       , header = None Text
       , path = None Text
       , executable = False
       }
 
 let File =
+    -- base File type with contents of type T
           \(T : Type)
       ->  { Type = Metadata //\\ { contents : T }, default = defaultMetadata }
 
-let TextFile =
-      { Type = (File Text).Type
-      , default = defaultMetadata // { format = Format.Raw }
-      }
+let withFormat =
+    -- File with a specific format
+      \(format : Format) -> \(T : Type) -> File T with default.format = format
 
-let Executable =
-      { Type = (File Text).Type
-      , default = defaultMetadata // { format = Format.Raw, executable = True }
-      }
+let TextFile = withFormat Format.Raw Text
 
-in  { File, Format, TextFile, Executable, Install, Metadata, Options }
+let YAMLFile = withFormat Format.YAML
+
+let JSONFile = withFormat Format.JSON
+
+let Executable = withFormat Format.Raw Text with default.executable = True
+
+in  { File
+    , Format
+    , TextFile
+    , Executable
+    , YAMLFile
+    , JSONFile
+    , Install
+    , Metadata
+    , Options
+    }
