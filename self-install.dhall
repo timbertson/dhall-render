@@ -13,12 +13,7 @@ let Prelude =
           https://prelude.dhall-lang.org/v16.0.0/Text/concatSep sha256:e4401d69918c61b92a4c0288f7d60a6560ca99726138ed8ebc58dca2cd205e58
       }
 
-in  { Tree
-    , Type = Options
-    , default
-    , exe = Tree.Executable::{ contents = lib ++ "main" }
-    , make =
-            \(options : Options)
+let makeExe = \(options : Options)
         ->  let processPath =
                       \(path : Text)
                   ->  ''
@@ -35,4 +30,12 @@ in  { Tree
                         # options.afterRuby
                       )
                 }
+
+in  { Tree
+    , Type = Options
+    , default
+    , exe = Tree.Executable::{ contents = lib ++ "main" }
+    , fix = Tree.Executable::{ contents = ./maintenance/fix as Text }
+    , make = makeExe
+    , makeExe
     }

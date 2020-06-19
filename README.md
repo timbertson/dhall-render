@@ -28,7 +28,7 @@ We render this tree of files (into a `generated/` directory for cleanliness), th
 
 There's options to control the generation - you can mark files as executable, or use a plain file instead of a symlink (e.g. to workaround Github actions choking on symlinks).
 
-And it's self-hosting. You can use the `SelfInstall` module to add this tool _as a generated file in your repo_, eliminating manual setup. You can even pre-bake the file path to use, resulting in a custom script which doesn't need any arguments.
+And it's self-hosting. You can use the `SelfInstall` module to add this tool _as a generated file in your repo_, eliminating manual setup. You can even pre-bake the default file path to use, resulting in a custom script which doesn't need any arguments.
 
 ## How should I bootstrap it?
 
@@ -69,6 +69,14 @@ In order to make sure your generated files remain in sync with the source expres
 ## Got examples?
 
 [Indeed I do](./examples/)
+
+## What can I do with the SelfInstall module?
+
+You can use the `exe` attribute to get the default `dhall-render` executable (ruby script).
+
+If you don't use `files.dhall` as your file expression, you can use `SelfInstall.makeExe SelfInstall::{ path = "path/to/files.dhall" }` to create a `self-install` with a different default path.
+
+There's also the `fix` attribute, which is the (not stable but handy) [./maintenance/fix][] script. This walks the current directory (or arguments) and by default evaluates and formats any `.dhall` files it finds. You can pass `--lint`, `--freeze` etc to perform other operations instead.
 
 ## Requirements
 
