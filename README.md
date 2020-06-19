@@ -78,6 +78,10 @@ If you don't use `files.dhall` as your file expression, you can use `SelfInstall
 
 There's also the `fix` attribute, which is the (not stable but handy) [./maintenance/fix][] script. This walks the current directory (or arguments) and by default evaluates and formats any `.dhall` files it finds. You can pass `--lint`, `--freeze` etc to perform other operations instead.
 
+## How do I get more details about type errors?
+
+`dhall-render` simply runs `dhall-to-json` on your `files.dhall` expression, and processes the results. If you have type errors, you can run `dhall --file files.dhall --explain` to get more details.
+
 ## Requirements
 
 `dhall-to-json` and `ruby`
