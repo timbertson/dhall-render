@@ -32,12 +32,14 @@ class Spec
 			# puts lines.inspect
 			line = lines.first
 			sha, ref = line.split("\t", 2)
-			if ref.start_with?("refs/tags")
+			resolved = if ref.start_with?("refs/tags")
 				# assume tags are immutable
 				@ref
 			else
 				sha
 			end
+			puts " -> #{resolved}"
+			resolved
 		end
 	end
 
@@ -52,11 +54,18 @@ def process(path, specs)
 	initial = File.read(path)
 	contents = initial
 	specs.each do |spec|
-		contents = contents.gsub(/(\/#{Regexp.escape(spec.repo)}\/)[^\/]+(.*)/) do |x|
+		contents = contents.gsub(/(\/#{Regexp.escape(spec.repo)}\/)([^\/]+)(.*)/) do |x|
 			match = Regexp.last_match
-			remaining_line = match[2].gsub(/ sha256:[a-zA-Z0-9]+/, '')
-			puts "#{path}: updating #{spec.repo}"
-			"#{match[1]}#{spec.resolved}#{remaining_line}"
+			prefix = match[1]
+			current_ref = match[2]
+			remaining_line = match[3]
+			updated_ref = spec.resolved
+			if current_ref == updated_ref
+				match[0]
+			else
+				remaining_line = match[3].gsub(/ sha256:[a-zA-Z0-9]+/, '')
+				"#{prefix}#{updated_ref}#{remaining_line}"
+			end
 		end
 	end
 	if contents != initial
