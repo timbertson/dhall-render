@@ -1,0 +1,103 @@
+#!/usr/bin/env ruby
+require 'open3'
+
+class Spec
+	attr_reader :repo, :ref
+	def initialize(repo, ref)
+		@repo = repo
+		@ref = ref
+	end
+
+	def unresolved?
+		@resolved == nil
+	end
+
+	def to_s
+		"#{@repo}:#{ref}"
+	end
+
+	def inspect
+		"Spec(#{self})"
+	end
+
+	def resolved
+		@resolved ||= begin
+			puts "Resolving #{self}"
+			token = ENV['GITHUB_TOKEN']
+			creds = "x-access-token:#{token}@" unless token.nil?
+			stdout, status = Open3.capture2('git', 'ls-remote', "https://#{creds}github.com/#{@repo}", @ref)
+			exit 1 unless status.success?
+			lines = stdout.strip.lines.map(&:strip)
+			raise "Couldn't extract a single ref:\n#{lines.join("\n")}" unless lines.length == 1
+			# puts lines.inspect
+			line = lines.first
+			sha, ref = line.split("\t", 2)
+			if ref.start_with?("refs/tags")
+				# assume tags are immutable
+				@ref
+			else
+				sha
+			end
+		end
+	end
+
+	def self.parse(spec)
+		parts = spec.split(':', 2)
+		raise "Invalid spec: #{spec}" if parts.size != 2
+		Spec.new(*parts)
+	end
+end
+
+def process(path, specs)
+	initial = File.read(path)
+	contents = initial
+	specs.each do |spec|
+		contents = contents.gsub(/(\/#{Regexp.escape(spec.repo)}\/)[^\/]+(.*)/) do |x|
+			match = Regexp.last_match
+			remaining_line = match[2].gsub(/ sha256:[a-zA-Z0-9]+/, '')
+			puts "#{path}: updating #{spec.repo}"
+			"#{match[1]}#{spec.resolved}#{remaining_line}"
+		end
+	end
+	if contents != initial
+		puts "Modifying: #{path}"
+		tmp_path = path + ".tmp"
+		File.write(tmp_path, contents)
+		File.rename(tmp_path, path)
+	end
+end
+
+def main
+	require 'optparse'
+
+	specs = []
+	args = OptionParser.new do |p|
+		p.banner = [
+			"Usage: bump [OPTIONS] INPUT_FILES",
+			"",
+			"Example: `bump --to timbertsion/dhall-render:master Render.dhall`",
+			"Branches will be resolved to their current commit, tags will",
+			"be left as-is (they are assumed immutable).",
+			"",
+			"NOTE: cache digests will (attempt to) be stripped, you should",
+			"`dhall freeze` any modified files.",
+			"",
+			"It's a failure if the a spec is not used in any input file.",
+			"--to may be specified many times.",
+			"\n",
+		].join("\n")
+		p.on('--to REPO:REF', "Bump the given REPO to REF") do |spec|
+			specs << Spec.parse(spec)
+		end
+	end.parse(ARGV)
+	raise "path required" if args.empty?
+	raise "--to required" if specs.empty?
+
+	args.each do |path|
+		process(path, specs)
+	end
+	unused = specs.select(&:unresolved?)
+	raise "ERROR: repositories not used: #{unused.inspect}" unless unused.empty?
+end
+
+main
