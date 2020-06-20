@@ -57,9 +57,17 @@ def main
 	args << '.' if args.empty?
 
 	args.each do |base|
-		Find.find(base).each do |path|
-			next if File.symlink?(path)
-			next unless path.end_with?('.dhall')
+		if File.directory?(base)
+			paths = Find.find(base)
+			file_filter = ->(path) { path.end_with?('.dhall') }
+		else
+			paths = [base]
+			file_filter = ->(path) { true }
+		end
+
+		paths.each do |path|
+			next if File.symlink?(path) || File.directory?(path)
+			next unless file_filter.call(path)
 			puts("[#{path}]")
 			base_cmd = ['dhall', '--ascii']
 			base_cmd << '--explain' if options[:explain]
