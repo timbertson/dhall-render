@@ -22,13 +22,13 @@ class Spec
 
 	def resolved
 		@resolved ||= begin
-			puts "Resolving #{self}"
+			puts "#{self}: resolving"
 			token = ENV['GITHUB_TOKEN']
 			creds = "x-access-token:#{token}@" unless token.nil?
 			stdout, status = Open3.capture2('git', 'ls-remote', "https://#{creds}github.com/#{@repo}", @ref)
 			exit 1 unless status.success?
 			lines = stdout.strip.lines.map(&:strip)
-			raise "Couldn't extract a single ref:\n#{lines.join("\n")}" unless lines.length == 1
+			raise "Couldn't extract a single ref from: #{lines.inspect}" unless lines.length == 1
 			# puts lines.inspect
 			line = lines.first
 			sha, ref = line.split("\t", 2)
@@ -50,28 +50,27 @@ class Spec
 	end
 end
 
-def process(path, specs)
+def process(path, options)
 	initial = File.read(path)
 	contents = initial
-	specs.each do |spec|
-		contents = contents.gsub(/(\/#{Regexp.escape(spec.repo)}\/)([^\/]+)(.*)/) do |x|
+	freeze_cmd = options.fetch(:freeze)
+	options.fetch(:specs).each do |spec|
+		contents = contents.gsub(/(\/#{Regexp.escape(spec.repo)}\/)[^\/]+/) do |x|
 			match = Regexp.last_match
 			prefix = match[1]
-			current_ref = match[2]
-			remaining_line = match[3]
-			updated_ref = spec.resolved
-			if current_ref == updated_ref
-				match[0]
-			else
-				remaining_line = match[3].gsub(/ sha256:[a-zA-Z0-9]+/, '')
-				"#{prefix}#{updated_ref}#{remaining_line}"
-			end
+			"#{prefix}#{spec.resolved}"
 		end
 	end
 	if contents != initial
-		puts "Modifying: #{path}"
 		tmp_path = path + ".tmp"
 		File.write(tmp_path, contents)
+		puts "#{path}: freezing"
+		cmd = freeze_cmd + [tmp_path]
+		puts("+ #{cmd.join(' ')}")
+		unless system(*cmd)
+			puts("Freeze failed")
+			exit(1)
+		end
 		File.rename(tmp_path, path)
 	end
 end
@@ -79,7 +78,11 @@ end
 def main
 	require 'optparse'
 
-	specs = []
+	default_freeze = [File.join(File.dirname($0), "fix"), "--freeze"]
+	options = {
+		freeze: default_freeze,
+		specs: [],
+	}
 	args = OptionParser.new do |p|
 		p.banner = [
 			"Usage: bump [OPTIONS] INPUT_FILES",
@@ -88,24 +91,27 @@ def main
 			"Branches will be resolved to their current commit, tags will",
 			"be left as-is (they are assumed immutable).",
 			"",
-			"NOTE: cache digests will (attempt to) be stripped, you should",
-			"`dhall freeze` any modified files.",
+			"If a file is modified, it'll be re-frozen to add digests.",
 			"",
 			"It's a failure if the a spec is not used in any input file.",
 			"--to may be specified many times.",
 			"\n",
 		].join("\n")
 		p.on('--to REPO:REF', "Bump the given REPO to REF") do |spec|
-			specs << Spec.parse(spec)
+			options[:specs] << Spec.parse(spec)
+		end
+		p.on('--freeze-cmd=CMD', "Override freeze command (default: #{default_freeze.join(" ")})") do |cmd|
+			require 'shellwords'
+			options[:freeze] = Shellwords.split(cmd)
 		end
 	end.parse(ARGV)
 	raise "path required" if args.empty?
-	raise "--to required" if specs.empty?
+	raise "--to required" if options.fetch(:specs).empty?
 
 	args.each do |path|
-		process(path, specs)
+		process(path, options)
 	end
-	unused = specs.select(&:unresolved?)
+	unused = options.fetch(:specs).select(&:unresolved?)
 	raise "ERROR: repositories not used: #{unused.inspect}" unless unused.empty?
 end
 
