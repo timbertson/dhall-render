@@ -22,12 +22,14 @@ let defaultMetadata =
 
 let File =
     -- base File type with contents of type T
-          \(T : Type)
-      ->  { Type = Metadata //\\ { contents : T }, default = defaultMetadata }
+      \(T : Type) ->
+        { Type = Metadata //\\ { contents : T }, default = defaultMetadata }
 
 let withFormat =
     -- File with a specific format
-      \(format : Format) -> \(T : Type) -> File T with default.format = format
+      \(format : Format) ->
+      \(T : Type) ->
+        let file = File T in file with default.format = format
 
 let TextFile = withFormat Format.Raw Text
 
@@ -35,7 +37,7 @@ let YAMLFile = withFormat Format.YAML
 
 let JSONFile = withFormat Format.JSON
 
-let Executable = withFormat Format.Raw Text with default.executable = True
+let Executable = TextFile with default.executable = True
 
 in  { File
     , Format
