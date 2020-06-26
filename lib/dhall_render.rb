@@ -60,7 +60,7 @@ def generate_into(generated_tmp:, generated_final:, tree:)
 		tmp_dest = File.join(generated_tmp, install_path)
 		final_dest = File.join(generated_final, install_path)
 		FileUtils.mkdir_p(File.dirname(tmp_dest))
-		FileUtils.mkdir_p(File.dirname(install_path))
+		FileUtils.mkdir_p(File.dirname(install_path)) unless install == 'None'
 		File.write(tmp_dest, contents)
 		if executable
 			FileUtils.chmod(0755, tmp_dest)
