@@ -10,7 +10,7 @@ require 'open3'
 
 FORMATTERS = {
 	'YAML' => -> (contents) { contents.to_yaml },
-	'JSON' => -> (contents) { contents.to_json },
+  'JSON' => -> (contents) { JSON.pretty_generate(contents) },
 	'Raw' => -> (contents) {
 		raise "Raw file must be a string, got #{contents.class}" unless contents.is_a? String
 		contents
