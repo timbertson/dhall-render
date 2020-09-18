@@ -14,23 +14,23 @@ let Prelude =
       }
 
 let makeExe =
-          \(options : Options)
-      ->  let processPath =
-                    \(path : Text)
-                ->  ''
-                    @default_path = ${Text/show path}
-                    main''
+      \(options : Options) ->
+        let processPath =
+              \(path : Text) ->
+                ''
+                @default_path = ${Text/show path}
+                main''
 
-          in  Tree.Executable::{
-              , contents =
-                  Prelude.Text.concatSep
-                    "\n"
-                    (   [ lib ]
-                      # options.beforeRuby
-                      # [ processPath options.path ]
-                      # options.afterRuby
-                    )
-              }
+        in  Tree.Executable::{
+            , contents =
+                Prelude.Text.concatSep
+                  "\n"
+                  (   [ lib ]
+                    # options.beforeRuby
+                    # [ processPath options.path ]
+                    # options.afterRuby
+                  )
+            }
 
 in  { Tree
     , Type = Options

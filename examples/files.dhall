@@ -17,11 +17,11 @@ let fileList =
       let ages = [ 1, 2, 3 ]
 
       let makeFile =
-                \(age : Natural)
-            ->  File::{
-                , path = Some "${Natural/show age}.yml"
-                , contents = { name = "youngling", age }
-                }
+            \(age : Natural) ->
+              File::{
+              , path = Some "${Natural/show age}.yml"
+              , contents = { name = "youngling", age }
+              }
 
       in  List/map Natural File.Type makeFile [ 1, 2, 3 ]
 
@@ -29,12 +29,12 @@ in  { options = Render.Options::{ destination = "examples/generated" }
     , files =
       { examples/files/hello = Render.TextFile::{ contents = "Hello!" }
       , `examples/files/hello.sh` = Render.Executable::{
-        , header = header
+        , header
         , contents = "echo 'Hello!'"
         , install = Render.Install.Write
         }
       , `examples/files/hello-shebang.sh` = Render.Executable::{
-        , header = header
+        , header
         , contents =
             ''
             #!/usr/bin/env bash
@@ -42,7 +42,7 @@ in  { options = Render.Options::{ destination = "examples/generated" }
         , install = Render.Install.Write
         }
       , `examples/files/config.yml` = (Render.YAMLFile SomeConfigFile)::{
-        , header = header
+        , header
         , contents = { name = "tim", age = 100 }
         }
       , `examples/files/config.json` = (Render.JSONFile SomeConfigFile)::{
