@@ -45,6 +45,12 @@ in  { options = Render.Options::{ destination = "examples/generated" }
         , header
         , contents = { name = "tim", age = 100 }
         }
+      , `examples/files/config-list.yml` = ( Render.YAMLFile
+                                               (List SomeConfigFile)
+                                           )::{
+        , header
+        , contents = [ { name = "tim", age = 50 }, { name = "fred", age = 50 } ]
+        }
       , `examples/files/config.json` = (Render.JSONFile SomeConfigFile)::{
         , contents = { name = "tim", age = 100 }
         }

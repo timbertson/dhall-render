@@ -9,7 +9,14 @@ require 'open3'
 @default_path = 'files.dhall'
 
 FORMATTERS = {
-	'YAML' => -> (contents) { contents.to_yaml },
+	'YAML' => -> (contents) {
+		if contents.is_a?(Array)
+			require 'psych'
+			Psych.dump_stream(*contents)
+		else
+			contents.to_yaml
+		end
+	},
 	'JSON' => -> (contents) { JSON.pretty_generate(contents) },
 	'Raw' => -> (contents) {
 		raise "Raw file must be a string, got #{contents.class}" unless contents.is_a? String
