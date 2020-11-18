@@ -5,11 +5,16 @@ require 'json'
 require 'find'
 require 'fileutils'
 require 'open3'
+require 'psych'
 
 @default_path = 'files.dhall'
 
 FORMATTERS = {
 	'YAML' => -> (contents) { contents.to_yaml },
+	'YAMLStream' => -> (contents) {
+    		raise "YAMLStream must be an array, got #{contents.class}" unless contents.is_a? Array
+    		Psych.dump_stream(contents)
+  	},
 	'JSON' => -> (contents) { JSON.pretty_generate(contents) },
 	'Raw' => -> (contents) {
 		raise "Raw file must be a string, got #{contents.class}" unless contents.is_a? String
