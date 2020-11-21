@@ -25,7 +25,11 @@ class Spec
 			puts "#{self}: resolving"
 			token = ENV['GITHUB_TOKEN']
 			creds = "x-access-token:#{token}@" unless token.nil?
-			stdout, status = Open3.capture2('git', 'ls-remote', "https://#{creds}github.com/#{@repo}", @ref)
+
+			# Workaround for github actions, see https://github.com/timbertson/dhall-render/issues/6
+			env = {'GIT_DIR' => '/dev/null'}
+			stdout, status = Open3.capture2(env, 'git', 'ls-remote', "https://#{creds}github.com/#{@repo}", @ref)
+
 			exit 1 unless status.success?
 			lines = stdout.strip.lines.map(&:strip)
 			raise "Couldn't extract a single ref from: #{lines.inspect}" unless lines.length == 1
