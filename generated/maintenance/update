@@ -103,7 +103,7 @@ end
 def contains_git_directory?(path)
 	return false unless File.directory?(path)
 	Dir.chdir(path) do
-		not Dir.glob('**/.git')
+		not Dir.glob('**/.git').empty?
 	end
 end
 
