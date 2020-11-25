@@ -18,6 +18,12 @@ We need something that's simple, appropriate for the task and supports super lig
  - Lightweight and simple to install (a couple static binaries totalling a dozen mb)
  - Purpose-built: dhall's stated goal is to replace YAML. Which is (mostly) what we're doing!
 
+## :warning: WARNING: `dhall-render` overwrites the output directory
+
+When run, it will replace whatever is currently present in the output directory (`generated` by default) with generated files. You should never set `dhall-render`'s output directory to something which already contains useful files, **they will be deleted**.
+
+Pointing this to an existing directory (effectively deleting it) is an unfortunate footgun to enable, but unfortunately it's a byproduct of an otherwise effective system - it's simple and successfully garbage collects unwanted files regardless of how you got into your current state.
+
 ## How does it work?
 
 The idea is that we can have one big dhall expression to define "all the generated files". This is super powerful - thanks to dhall's remote imports, you can use whatever types and abstractions you need by importing straight from the internet (it even supports private Github repositories).
