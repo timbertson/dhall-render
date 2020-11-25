@@ -100,6 +100,14 @@ def files_recursively_in(path)
 	end
 end
 
+def contains_git_directory?(path)
+	return false unless File.directory?(path)
+	Dir.chdir(path) do
+		not Dir.glob('**/.git')
+	end
+end
+
+
 def remove_previously_installed(generated_final:, generated_tmp:)
 	unwanted_files = files_recursively_in(generated_final) - files_recursively_in(generated_tmp)
 	# puts unwanted_files.inspect
@@ -118,6 +126,7 @@ def process_json(file)
 	options = tree.fetch('options', { 'destination' => "generated" })
 	generated_final = options.fetch('destination')
 	puts "*** Generating files in #{generated_final} ..."
+	raise "Refusing to overwrite #{generated_final}, it contains a .git folder" if contains_git_directory?(generated_final)
 
 	generated_tmp = generated_final + '.tmp'
 
