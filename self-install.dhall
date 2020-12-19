@@ -4,7 +4,7 @@ let lib = ./lib/dhall_render.rb as Text ++ "\n"
 
 let Options = { beforeRuby : List Text, afterRuby : List Text, path : Text }
 
-let default = { beforeRuby = [] : List Text, afterRuby = [] : List Text }
+let default = { beforeRuby = [] : List Text, afterRuby = [] : List Text, path = "dhall/files.dhall" }
 
 let Prelude =
       { List.map

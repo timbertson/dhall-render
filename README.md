@@ -38,10 +38,10 @@ And it's self-hosting. You can use the `SelfInstall` module to add this tool _as
 
 ## How should I bootstrap it?
 
-First, write an initial `files.dhall`:
+First, write an initial `dhall/files.dhall`:
 
 ```dhall
--- files.dhall
+-- dhall/files.dhall
 let Render =
       https://raw.githubusercontent.com/timbertson/dhall-render/8dba93061bae9054dffda1a497e8c2831d4f480a/package.dhall
 

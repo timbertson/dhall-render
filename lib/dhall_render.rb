@@ -6,7 +6,7 @@ require 'find'
 require 'fileutils'
 require 'open3'
 
-@default_path = 'files.dhall'
+@default_path = 'dhall/files.dhall'
 
 FORMATTERS = {
 	'YAML' => -> (contents) {
