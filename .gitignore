@@ -1,3 +1,7 @@
 /maintenance/update
 /bootstrap/generated
 /bootstrap/dhall-render
+/generated/maintenance/update
+/maintenance/update
+/bin/dhall-render
+/generated/bin/dhall-render
