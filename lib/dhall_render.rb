@@ -49,8 +49,39 @@ def generate_into(generated_tmp:, generated_final:, tree:)
 		puts "#{install_path}:"
 		install = doc.fetch('install')
 		header = doc['header']
+		header_lines = doc.fetch('headerLines', [])
+		header_format = doc.fetch('headerFormat', false)
+
 		contents = FORMATTERS.fetch(doc.fetch('format')).call(doc.fetch('contents'))
 		executable = doc.fetch('executable')
+
+		if header.nil?
+			# compute from header_lines/format
+			header = if header_lines.empty?
+				nil
+			else
+				header_body = -> (prefix) {
+					header_lines.map {|line| prefix + line }.join("\n")
+				}
+				case header_format
+				when false
+					nil
+				when String
+					header_body.call header_format
+				when Hash
+					[
+						header_format.fetch('prefix'),
+						header_body.call(header_format.fetch('linePrefix')),
+						header_format.fetch('suffix'),
+					].join("\n")
+				else
+					raise "Unknown headerLines setting: #{header_format.inspect}"
+				end
+			end
+		else
+			puts "NOTE: `header` setting on dhall-render file is deprecated and will be removed, use `headerLines` and optionally `headerFormat`"
+		end
+
 		unless header.nil?
 			# inject header after shebang, if there is one
 			prefix = ''
@@ -59,7 +90,7 @@ def generate_into(generated_tmp:, generated_final:, tree:)
 				prefix = lines[0]
 				contents = lines.drop(1).join('')
 			end
-			contents = "#{prefix}#{header}\n#{contents}"
+			contents = "#{prefix}#{header}\n\n#{contents}"
 		end
 		# ensure it's newline-terminated
 		contents = contents.chomp("\n") + "\n"

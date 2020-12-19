@@ -1,0 +1,7 @@
+2020-12-20:
+
+Introduced a more formal `header` setting to the `File` type, split into `headerLines` and `headerFormat`.
+This allows the same `headerLines` to be used for many files, but providing different formats to match the file format.
+Common formats are provided in the `Header` structure, and defaults are set in `YAMLFile` / `TextFile` / `Executable` / `JSONFile`.
+The old `header` value is used if present, but will be removed in a future release.
+Previously headers were disabled by default, but now there is a default header which you can disable with `headerLines = []` (or `headerFormat = Header.ignore`)

@@ -34,7 +34,6 @@ in  { options = Render.Options::{ destination = "examples/generated" }
         , install = Render.Install.Write
         }
       , `examples/files/hello-shebang.sh` = Render.Executable::{
-        , header
         , contents =
             ''
             #!/usr/bin/env bash
@@ -42,17 +41,27 @@ in  { options = Render.Options::{ destination = "examples/generated" }
         , install = Render.Install.Write
         }
       , `examples/files/config.yml` = (Render.YAMLFile SomeConfigFile)::{
-        , header
         , contents = { name = "tim", age = 100 }
         }
       , `examples/files/config-list.yml` = ( Render.YAMLFile
                                                (List SomeConfigFile)
                                            )::{
-        , header
         , contents = [ { name = "tim", age = 50 }, { name = "fred", age = 50 } ]
         }
       , `examples/files/config.json` = (Render.JSONFile SomeConfigFile)::{
         , contents = { name = "tim", age = 100 }
+        }
+      , `examples/files/hello.html` = Render.TextFile::{
+        , contents = "<h1>Hello</h1>"
+        , headerFormat = Render.Header.html
+        }
+      , `examples/files/no-header.txt` = Render.TextFile::{
+        , contents = "(intentionally empty)"
+        , headerFormat = Render.Header.ignore
+        }
+      , `examples/files/no-header-2.txt` = Render.TextFile::{
+        , contents = "(intentionally empty)"
+        , headerLines = [] : List Text
         }
       , examples/files/list = fileList
       }

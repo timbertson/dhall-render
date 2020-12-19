@@ -32,11 +32,25 @@ let makeExe =
                   )
             }
 
+let exe = Tree.Executable::{ contents = lib ++ "main" }
+
+let fix = Tree.Executable::{ contents = ./maintenance/fix as Text }
+
+let bump = Tree.Executable::{ contents = ./maintenance/bump as Text }
+
+let files =
+      \(options : Options) ->
+        { files =
+          { dhall/render = makeExe options, dhall/fix = fix, dhall/bump = bump }
+        }
+
 in  { Tree
     , Type = Options
     , default
-    , exe = Tree.Executable::{ contents = lib ++ "main" }
-    , fix = Tree.Executable::{ contents = ./maintenance/fix as Text }
     , make = makeExe
     , makeExe
+    , exe
+    , fix
+    , bump
+    , files
     }
