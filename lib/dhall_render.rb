@@ -106,15 +106,25 @@ def generate_into(generated_tmp:, generated_final:, tree:)
 		INSTALLERS.fetch(install).call(tmp_dest, final_dest, install_path)
 	end
 
+	generate_file_with_logging = -> (install_path, doc) do
+		begin
+			generate_file.call(install_path, doc)
+		rescue
+			puts "Error processing document:\n#{doc.inspect}"
+			puts "Document keys: #{doc.keys.inspect}"
+			raise
+		end
+	end
+
 	tree.fetch('files').each_pair do |install_path, doc|
 		if doc.is_a?(Array)
 			doc.each do |entry|
-				generate_file.call(File.join(install_path, entry.fetch('path')), entry)
+				generate_file_with_logging.call(File.join(install_path, entry.fetch('path')), entry)
 			end
 		else
 			sub_path = doc['path']
 			install_path = File.join(install_path, sub_path) unless sub_path.nil?
-			generate_file.call(install_path, doc)
+			generate_file_with_logging.call(install_path, doc)
 		end
 	end
 end
@@ -156,7 +166,7 @@ def process_json(file)
 	# puts tree.inspect
 	options = tree.fetch('options', { 'destination' => "generated" })
 	generated_final = options.fetch('destination')
-	puts "*** Generating files in #{generated_final} ..."
+	puts "*** Generating files in `#{generated_final}` ..."
 	raise "Refusing to overwrite #{generated_final}, it contains a .git folder" if contains_git_directory?(generated_final)
 
 	generated_tmp = generated_final + '.tmp'
