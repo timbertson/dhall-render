@@ -17,9 +17,10 @@ trap "remove_tempdir" EXIT
 base="$(cd "$(dirname "$0")" && pwd)"
 cd "$tempdir"
 
-if cat "$base/bootstrap.sh" | bash; then
+if cat "$base/../bootstrap.sh" | bash; then
   set +x
   find .
+  cat dhall/files.dhall
   echo "OK"
 else
   set +x

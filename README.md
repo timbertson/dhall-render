@@ -38,31 +38,21 @@ And it's self-hosting. You can use the `SelfInstall` module to add this tool _as
 
 ## How should I bootstrap it?
 
-First, write an initial `dhall/files.dhall`:
-
-```dhall
--- dhall/files.dhall
-let Render =
-      https://raw.githubusercontent.com/timbertson/dhall-render/8dba93061bae9054dffda1a497e8c2831d4f480a/package.dhall
-
-in  { files = { dhall-render = Render.SelfInstall.exe } }
-```
-
-(you should replace that commit with the latest from this repository)
-
-Then bootstrap it by sending the contents of the script it's _about_ to create as text to `ruby`:
+The quickest way is with this one-liner:
 
 ```
-echo '(./files.dhall).files.dhall-render.contents' | dhall text | ruby
+curl -sSL https://raw.githubusercontent.com/timbertson/dhall-render/master/bootstrap.sh | bash
 ```
 
-### What if I really just want a bash one-liner without writing any files first?
+That'll get you set up with a default `dhall/files.dhall` (a copy of [bootstrap/files.dhall](./bootstrap/files.dhall)), run the initial render to install `dhall-render` itself, and pin your `dhall-render` version to a specific commit.
 
-Okay :shrug:
+If you'd rather set it up manually, make a copy of [bootstrap/files.dhall](./bootstrap/files.dhall) in `dhall/files.dhall`, then run:
 
 ```
-echo '( https://raw.githubusercontent.com/timbertson/dhall-render/master/package.dhall ).SelfInstall.exe.contents' | dhall text | ruby /dev/stdin
+echo '(./dhall/files.dhall).files.`dhall/render`.contents' | dhall text | ruby
 ```
+
+You should then run `./dhall/fix --freeze ./dhall/files.dhall` to pin your `dhall-render` version.
 
 ## Do I check in the generated files?
 
