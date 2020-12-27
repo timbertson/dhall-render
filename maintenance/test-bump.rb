@@ -1,3 +1,5 @@
+#!/usr/bin/env ruby
+
 load "maintenance/bump"
 
 def assert_equal(a,b)

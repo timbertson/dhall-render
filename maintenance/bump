@@ -8,7 +8,7 @@ class Exec
 end
 
 class Listing
-	attr_reader :sha
+	attr_reader :sha, :ref
 	def initialize(line)
 		@line = line
 		@sha, @ref = line.split("\t", 2)
@@ -25,8 +25,17 @@ class Listing
 		tag.split('.').map(&method(:extract_number))
 	end
 
+	def immutable
+		# assume tags are immutable
+		tag || @sha
+	end
+
+	def to_s
+		immutable
+	end
+
 	def inspect
-		@line.inspect
+		to_s
 	end
 
 	private
@@ -54,8 +63,7 @@ class ExplicitRef
 	def extract(listings)
 		raise "Couldn't extract a single ref from: #{listings.inspect}" unless listings.length == 1
 		listing = listings.first
-		# assume tags are immutable
-		listing.tag || listing.sha
+		listing.immutable
 	end
 
 	def to_s
@@ -80,8 +88,12 @@ class LatestTagRef
 	def extract(listings)
 		listings = listings.sort_by(&:version_order)
 		latest = listings.last
-		raise "No tags found" if (latest.nil? || latest.tag.nil?)
-		latest.tag
+		if (latest.nil? || latest.tag.nil?)
+		puts "No tags found, falling back to HEAD"
+		listings.find{|listing| listing.ref == 'HEAD'}
+		else
+			latest.tag
+		end
 	end
 
 	def ==(other)
