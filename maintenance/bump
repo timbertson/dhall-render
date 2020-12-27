@@ -1,11 +1,120 @@
 #!/usr/bin/env ruby
 require 'open3'
 
+class Exec
+	def capture2(*args)
+		Open3.capture2(*args)
+	end
+end
+
+class Listing
+	attr_reader :sha, :ref
+	def initialize(line)
+		@line = line
+		@sha, @ref = line.split("\t", 2)
+	end
+
+	def tag
+		if @ref.start_with?('refs/tags')
+			@ref.slice(10..-1)
+		end
+	end
+
+	def version_order
+		tag = self.tag || ''
+		tag.split('.').map(&method(:extract_number))
+	end
+
+	def immutable
+		# assume tags are immutable
+		tag || @sha
+	end
+
+	def to_s
+		immutable
+	end
+
+	def inspect
+		to_s
+	end
+
+	private
+
+	def extract_number(s)
+		match = s.match(/([0-9]+)/)
+		if match.nil?
+			0
+		else
+			match.captures.first.to_i(10)
+		end
+	end
+end
+
+class ExplicitRef
+	attr_reader :ref
+	def initialize(ref)
+		@ref = ref
+	end
+
+	def ls_args
+		[@ref]
+	end
+
+	def extract(listings)
+		raise "Couldn't extract a single ref from: #{listings.inspect}" unless listings.length == 1
+		listing = listings.first
+		listing.immutable
+	end
+
+	def to_s
+		@ref
+	end
+
+	def inspect
+		to_s
+	end
+
+	def ==(other)
+		other.is_a?(ExplicitRef) && other.ref == ref
+	end
+end
+
+# find the latest tag, instead of searching for a particular one
+class LatestTagRef
+	def ls_args
+		[]
+	end
+
+	def extract(listings)
+		listings = listings.sort_by(&:version_order)
+		latest = listings.last
+		if (latest.nil? || latest.tag.nil?)
+		puts "No tags found, falling back to HEAD"
+		listings.find{|listing| listing.ref == 'HEAD'}
+		else
+			latest.tag
+		end
+	end
+
+	def ==(other)
+		other.is_a?(LatestTagRef)
+	end
+
+	def to_s
+		""
+	end
+
+	def inspect
+		to_s
+	end
+end
+
 class Spec
 	attr_reader :repo, :ref
-	def initialize(repo, ref)
+	def initialize(repo, ref, exec = Exec.new)
 		@repo = repo
 		@ref = ref
+		@exec = exec
 	end
 
 	def unresolved?
@@ -28,20 +137,11 @@ class Spec
 
 			# Workaround for github actions, see https://github.com/timbertson/dhall-render/issues/6
 			env = {'GIT_DIR' => '/dev/null'}
-			stdout, status = Open3.capture2(env, 'git', 'ls-remote', "https://#{creds}github.com/#{@repo}", @ref)
+			stdout, status = @exec.capture2(env, 'git', 'ls-remote', "https://#{creds}github.com/#{@repo}", *@ref.ls_args)
 
 			exit 1 unless status.success?
-			lines = stdout.strip.lines.map(&:strip)
-			raise "Couldn't extract a single ref from: #{lines.inspect}" unless lines.length == 1
-			# puts lines.inspect
-			line = lines.first
-			sha, ref = line.split("\t", 2)
-			resolved = if ref.start_with?("refs/tags")
-				# assume tags are immutable
-				@ref
-			else
-				sha
-			end
+			lines = stdout.strip.lines.map(&:strip).map(&Listing.method(:new))
+			resolved = @ref.extract(lines)
 			puts " -> #{resolved}"
 			resolved
 		end
@@ -49,8 +149,33 @@ class Spec
 
 	def self.parse(spec)
 		parts = spec.split(':', 2)
-		raise "Invalid spec: #{spec}" if parts.size != 2
-		Spec.new(*parts)
+		raise "Invalid spec: #{spec}" if parts.size > 2
+		repo, ref = parts
+		ref = (ref.nil? || ref.empty?) ? LatestTagRef.new : ExplicitRef.new(ref)
+		Spec.new(repo, ref)
+	end
+
+	def ==(other)
+		other.is_a?(Spec) && other.repo == repo && other.ref == ref
+	end
+end
+
+def guess_specs(options, contents)
+	if options.fetch(:specs).empty?
+		specs = contents.scan(/#{Regexp.escape('https://raw.githubusercontent.com/')}([^\/]+\/[^\/]+)\/([^\/]+)/).map do |match|
+			repo, ref = match
+			if ref.match(/^[0-9a-zA-Z]{32}/)
+				ref = ExplicitRef.new('HEAD')
+			else
+				ref = LatestTagRef.new
+			end
+			Spec.new(repo, ref)
+		end
+		puts "Guessed specs:\n"
+		specs.each {|spec| puts " - #{spec}"}
+		specs
+	else
+		options.fetch(:specs)
 	end
 end
 
@@ -58,7 +183,7 @@ def process(path, options)
 	initial = File.read(path)
 	contents = initial
 	freeze_cmd = options.fetch(:freeze)
-	options.fetch(:specs).each do |spec|
+	guess_specs(options, contents).each do |spec|
 		contents = contents.gsub(/(\/#{Regexp.escape(spec.repo)}\/)[^\/]+/) do |x|
 			match = Regexp.last_match
 			prefix = match[1]
@@ -99,6 +224,10 @@ def main
 			"",
 			"It's a failure if the a spec is not used in any input file.",
 			"--to may be specified many times.",
+			"",
+			"If you don't pass any specs, they will be guessed for all found github imports:",
+			" - if the current import refers to a commit, HEAD will be used",
+			" - otherwise, the latest tag is used",
 			"\n",
 		].join("\n")
 		p.on('--to REPO:REF', "Bump the given REPO to REF") do |spec|
@@ -110,7 +239,6 @@ def main
 		end
 	end.parse(ARGV)
 	raise "path required" if args.empty?
-	raise "--to required" if options.fetch(:specs).empty?
 
 	args.each do |path|
 		process(path, options)
@@ -119,4 +247,6 @@ def main
 	raise "ERROR: repositories not used: #{unused.inspect}" unless unused.empty?
 end
 
-main
+if $PROGRAM_NAME == __FILE__
+	main()
+end
