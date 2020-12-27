@@ -98,7 +98,7 @@ It's not _zero_-dependency, obviously -- you can't get around your contributors 
 
 ## How stable is this?
 
-I wrote it quickly, and it's got no automated tests. But it's very simple, the examples work, and I use it daily.
+I wrote it quickly, and it's only got a handful of automated tests. But it's very simple, the examples work, and I use it daily.
 
 ## Why is it written in Ruby?
 

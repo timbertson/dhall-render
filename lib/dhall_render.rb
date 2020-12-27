@@ -202,7 +202,7 @@ def process(path, options=DEFAULT_OPTIONS)
 	end
 end
 
-def main
+def main(args = ARGV)
 	require 'optparse'
 
 	options = DEFAULT_OPTIONS.dup
@@ -216,7 +216,7 @@ def main
 		p.on('--json', "Assume input is already evaluated to JSON") do ||
 			options[:dhall] = false
 		end
-	end.parse(ARGV)
+	end.parse(args)
 	args << @default_path if args.empty?
 
 	args.each do |path|
