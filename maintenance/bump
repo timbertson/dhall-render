@@ -211,6 +211,7 @@ def main
 	options = {
 		freeze: default_freeze,
 		specs: [],
+		allow_unused: false,
 	}
 	args = OptionParser.new do |p|
 		p.banner = [
@@ -222,8 +223,9 @@ def main
 			"",
 			"If a file is modified, it'll be re-frozen to add digests.",
 			"",
-			"It's a failure if the a spec is not used in any input file.",
 			"--to may be specified many times.",
+			"It's a failure if the a spec is not used in any input file,",
+			"unless --allow-unused is passed.",
 			"",
 			"If you don't pass any specs, they will be guessed for all found github imports:",
 			" - if the current import refers to a commit, HEAD will be used",
@@ -232,6 +234,9 @@ def main
 		].join("\n")
 		p.on('--to REPO:REF', "Bump the given REPO to REF") do |spec|
 			options[:specs] << Spec.parse(spec)
+		end
+		p.on('--allow-unused', "Allow unused specs") do ||
+			options[:allow_unused] = true
 		end
 		p.on('--freeze-cmd=CMD', "Override freeze command (default: #{default_freeze.join(" ")})") do |cmd|
 			require 'shellwords'
@@ -243,8 +248,10 @@ def main
 	args.each do |path|
 		process(path, options)
 	end
-	unused = options.fetch(:specs).select(&:unresolved?)
-	raise "ERROR: repositories not used: #{unused.inspect}" unless unused.empty?
+	unless options.fetch(:allow_unused)
+		unused = options.fetch(:specs).select(&:unresolved?)
+		raise "ERROR: repositories not used: #{unused.inspect}" unless unused.empty?
+	end
 end
 
 if $PROGRAM_NAME == __FILE__
