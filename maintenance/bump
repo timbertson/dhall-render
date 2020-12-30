@@ -149,7 +149,7 @@ class Spec
 
 	def self.parse(spec)
 		parts = spec.split(':', 2)
-		raise "Invalid spec: #{spec}" if parts.size > 2
+		raise "Invalid spec: #{spec}" unless [1,2].include?(parts.size)
 		repo, ref = parts
 		ref = (ref.nil? || ref.empty?) ? LatestTagRef.new : ExplicitRef.new(ref)
 		Spec.new(repo, ref)
