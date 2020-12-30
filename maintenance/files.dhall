@@ -36,6 +36,7 @@ in  { files =
                               , image = CI.Docker.Image::{
                                 , name =
                                     "${CI.Docker.Registry.githubPackages}/timbertson/dhall-ci/dhall"
+                                , tag = Some "1.37"
                                 }
                               }
                               ( CI.Git.requireCleanWorkspaceAfterRunning
