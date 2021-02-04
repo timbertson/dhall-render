@@ -217,7 +217,7 @@ def main
 		p.banner = [
 			"Usage: bump [OPTIONS] INPUT_FILES",
 			"",
-			"Example: `bump --to timbertsion/dhall-render:master Render.dhall`",
+			"Example: `bump --to timbertson/dhall-render:master Render.dhall`",
 			"Branches will be resolved to their current commit, tags will",
 			"be left as-is (they are assumed immutable).",
 			"",
