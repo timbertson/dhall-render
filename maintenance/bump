@@ -238,7 +238,7 @@ def main
 		p.on('--allow-unused', "Allow unused specs") do ||
 			options[:allow_unused] = true
 		end
-		p.on('--freeze-cmd=CMD', "Override freeze command (default: #{default_freeze.join(" ")})") do |cmd|
+		p.on('--freeze=CMD', "Override freeze command (default: #{default_freeze.join(" ")})") do |cmd|
 			require 'shellwords'
 			options[:freeze] = Shellwords.split(cmd)
 		end
