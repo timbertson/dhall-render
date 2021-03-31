@@ -3,7 +3,7 @@ let Render =
 
 in  { files =
             Render.SelfInstall.files Render.SelfInstall::{=}
-        //  { -- Replace this sample entry with your own file definitions:
+        /\  { -- Replace this sample entry with your own file definitions:
               dhall/hello = Render.TextFile::{ contents = "world!" }
             }
     }
