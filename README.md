@@ -74,6 +74,25 @@ If you don't use `files.dhall` as your file expression, you can use `SelfInstall
 
 There's also the `fix` attribute, which is the (not stable but handy) [./maintenance/fix][] script. This walks the current directory (or arguments) and by default evaluates and formats any `.dhall` files it finds. You can pass `--lint`, `--freeze` etc to perform other operations instead.
 
+## How can I use a local copy of an import during development?
+
+When working on dhall libraries, it's common to want to develop against a local copy while making changes.
+
+There's no good workflow for this built into dhall, so `dhall-render` provides a utility script (`dhall/local`) for this purpose.
+
+To set up a local version of a `Foo.dhall` file, create a `Foo.dhall.local` file next to it, with the same structure as `Foo.dhall` but using local imports.
+
+Then, to use it:
+
+```
+./dhall/local ./dhall/render
+```
+
+This finds all `*.dhall.local` files, and _temporarily_ replaces the corresponding `*.dhall` file, then runs the supplied command (in this case `dhall/render`, but it could be anything).
+
+Upon termination, it restores the original `*.dhall` files, so it should result in no actual changes to your workspace.
+Note that it does actually move files around on disk so the effects will be observed by all running processes, not just the one you specify.
+
 ## How do I get more details about type errors?
 
 `dhall-render` simply runs `dhall-to-json` on your `files.dhall` expression, and processes the results. If you have type errors, you can run `dhall --file files.dhall --explain` to get more details.
