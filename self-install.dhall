@@ -44,9 +44,28 @@ let fix = Tree.Executable::{ contents = ./maintenance/fix as Text }
 
 let bump = Tree.Executable::{ contents = ./maintenance/bump as Text }
 
+let local = Tree.Executable::{ contents = ./maintenance/local as Text }
+
+let documentation =
+      [ "## Dhall-based file generation"
+      , ""
+      , "This project uses [dhall-render](https://github.com/timbertson/dhall-render) to generate a number of files."
+      , "Below are common commands to manage these files:"
+      , ""
+      , " - `dhall/render`: re-render all files defined in dhall/files.dhall"
+      , " - `dhall/bump --to someuser/somerepo:branch_or_tag FILES`: bump all `someuser/somerepo` references in FILES to the given branch/tag. Multiple repos and multiple files can be specified at once."
+      , " - `dhall/fix [FILES]`: evaluate & format dhall files in the given path (default `.`). Pass `--lint` to lint as well."
+      , " - `dhall/local COMMAND`: run COMMAND with all `<name>.dhall.local` files temporarily in place of `<name>.dhall`"
+      , ""
+      ]
+
 let files =
       \(options : Options) ->
-        { dhall/render = makeExe options, dhall/fix = fix, dhall/bump = bump }
+        { dhall/render = makeExe options
+        , dhall/fix = fix
+        , dhall/bump = bump
+        , dhall/local = local
+        }
 
 in  { Tree
     , Type = Options
@@ -56,5 +75,7 @@ in  { Tree
     , exe
     , fix
     , bump
+    , local
     , files
+    , documentation
     }

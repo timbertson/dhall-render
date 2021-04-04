@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+set -eu
+# with-local will temporarily install all `.dhall.local` files in place of the
+# corresponding `.dhall` files, for the duration of a single command.
+#
+# Upon exit, the script will attempt to restore the original versions.
+# If this fails, the following invariants will hold, which should allow the
+# script to be run again and self-correct:
+#
+# Invariants:
+#  - there is always a .local version
+#  - if there is no explicit .remote file, then there must be a plain file (which is the logical "remote" version)
+#  - if there is a .remote file, then
+#    - there may be a plain file, which is a symlink to .local
+
+if [ "${DEBUG:-0}" = 1 ]; then
+	# set -x
+	function log {
+		echo >&2 "$@"
+	}
+else
+	function log {
+		true
+	}
+fi
+
+function local_version {
+	echo "$1.local"
+}
+
+function remote_version {
+	echo "$1.remote"
+}
+
+function install_local {
+	path="$1"
+	remote_path="$(remote_version "$1")"
+	local_path="$(local_version "$1")"
+	if [ ! -e "$remote_path" ]; then
+		if [ -L "$path" ]; then
+			log "Error: $remote_path doesn't exist but $path is a symlink"
+			exit 1
+		fi
+		# backup to remote_path
+		log "moving to $remote_path"
+		mv "$path" "$remote_path"
+	fi
+	echo >&2 "[ using $local_path ... ]"
+	ln -s "$(basename "$local_path")" "$path"
+}
+
+function restore_remote {
+	# put remote version back in place
+	path="$1"
+	remote_path="$(remote_version "$1")"
+	if [ -e "$remote_path" ]; then
+		log "restoring $remote_path"
+		mv "$remote_path" "$path"
+	else
+		log "Error: $remote_path is not present"
+		exit 1
+	fi
+}
+
+function find_all {
+	base_dir="$(dirname "$0")"
+	log "base_dir: $base_dir"
+	find "$base_dir" -name '*.dhall.local' | while read f; do
+		path="$(dirname "$f")/$(basename "$f" .local)"
+		log "processing $path"
+		echo "$path"
+	done
+}
+
+function restore_all {
+	find_all | while read f; do
+		restore_remote "$f"
+	done
+}
+
+function install_all {
+	find_all | while read f; do
+		install_local "$f"
+	done
+}
+
+if [ "$#" -eq 0 ]; then
+	echo >&2 "Usage: "$0" COMMAND"
+fi
+
+trap restore_all EXIT
+install_all
+"$@"
