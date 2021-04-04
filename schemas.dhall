@@ -77,6 +77,8 @@ let YAMLFile = withFormat Format.YAML Header.hash
 
 let JSONFile = withFormat Format.JSON Header.ignore
 
+let MarkdownFile = TextFile with default.headerFormat = Header.html
+
 let Executable = TextFile with default.executable = True
 
 in  { File
@@ -86,6 +88,7 @@ in  { File
     , Executable
     , YAMLFile
     , JSONFile
+    , MarkdownFile
     , Install
     , Metadata
     , Options
