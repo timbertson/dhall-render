@@ -1,0 +1,4 @@
+  ../../../dhall-ci/dhall-ci/package.dhall
+/\ { Git = ../../../dhall-ci/dhall-ci-git/package.dhall
+  , Docker = ../../../dhall-ci/dhall-ci-docker/package.dhall
+  }

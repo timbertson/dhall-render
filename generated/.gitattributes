@@ -2,3 +2,4 @@
 # You should NOT edit it manually, your changes will be lost.
 
 generated/* linguist-generated
+.github/workflows/* linguist-generated
