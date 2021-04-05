@@ -64,6 +64,7 @@ function restore_remote {
 
 function find_all {
 	base_dir="$(dirname "$0")"
+	base_dir="${DHALL_LOCAL_ROOT:-$base_dir}"
 	log "base_dir: $base_dir"
 	find "$base_dir" -name '*.dhall.local' | while read f; do
 		path="$(dirname "$f")/$(basename "$f" .local)"
