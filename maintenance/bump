@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 require 'open3'
+require 'fileutils'
 
 class Exec
 	def capture2(*args)
@@ -179,6 +180,24 @@ def guess_specs(options, contents)
 	end
 end
 
+def capture_digests(paths, strict: true)
+	return nil if paths.empty?
+	return paths.map do |path|
+		cmd = ['dhall', 'hash', '--file', path]
+		stdout, status = Open3.capture2(*cmd)
+		unless status.success?
+			if strict
+				puts("+ #{cmd.join(' ')}")
+				puts("Failed to capture hash of #{path}")
+				exit(1)
+			else
+				puts("Note: #{path} no longer evaluates; treating this as a change")
+			end
+		end
+		stdout.strip()
+	end
+end
+
 def process(path, options)
 	initial = File.read(path)
 	contents = initial
@@ -192,6 +211,7 @@ def process(path, options)
 	end
 	if contents != initial
 		tmp_path = path + ".tmp"
+		original_path = path + '.orig.tmp'
 		File.write(tmp_path, contents)
 		puts "#{path}: freezing"
 		cmd = freeze_cmd + [tmp_path]
@@ -200,7 +220,25 @@ def process(path, options)
 			puts("Freeze failed")
 			exit(1)
 		end
+
+		if_affects = options.fetch(:if_affects)
+		initial_digests = capture_digests(if_affects)
+		unless initial_digests.nil?
+			FileUtils.copy_file(path, original_path)
+		end
+
 		File.rename(tmp_path, path)
+
+		unless initial_digests.nil?
+			final_digests = capture_digests(if_affects, strict: false)
+			if initial_digests == final_digests
+				puts("Digests unchanged after update; reverting")
+				File.rename(original_path, path)
+			else
+				puts("At least one digest was affected")
+				File.unlink(original_path)
+			end
+		end
 	end
 end
 
@@ -211,6 +249,7 @@ def main
 	options = {
 		freeze: default_freeze,
 		specs: [],
+		if_affects: [],
 		allow_unused: false,
 	}
 	args = OptionParser.new do |p|
@@ -222,6 +261,9 @@ def main
 			"be left as-is (they are assumed immutable).",
 			"",
 			"If a file is modified, it'll be re-frozen to add digests.",
+			"",
+			"If you pass --if-affects (can be passed many times), the update is only",
+			"kept when the `dhall hash` of at least one file is changed by the update.",
 			"",
 			"--to may be specified many times.",
 			"It's a failure if the a spec is not used in any input file,",
@@ -237,6 +279,9 @@ def main
 		end
 		p.on('--allow-unused', "Allow unused specs") do ||
 			options[:allow_unused] = true
+		end
+		p.on('--if-affects=FILE', "Revert the bump if it does not affect the `dhall digest` of FILE") do |path|
+			options[:if_affects] << path
 		end
 		p.on('--freeze-cmd=CMD', "Override freeze command (default: #{default_freeze.join(" ")})") do |cmd|
 			require 'shellwords'
