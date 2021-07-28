@@ -76,7 +76,7 @@ def main
 				if options[:fix_imports]
 					# workaround https://github.com/dhall-lang/dhall-haskell/issues/1672
 					contents = File.read(path)
-					fixed = contents.gsub(/(http[^ ]+ using) ([.\\\/~][^ ]+) (sha256:[^ $])/) do |x|
+					fixed = contents.gsub(/(http[^ ]+ using) ([.\\\/~][^ ]+?)\n\s+(sha256:[^ ]+$)/) do |x|
 						match = Regexp.last_match
 						"#{match[1]} (#{match[2]}) #{match[3]}"
 					end
