@@ -6,6 +6,7 @@ fix:
 	maintenance/fix
 
 test:
+	test/test-fix.rb
 	test/test-bump.rb
 	test/test-render.rb
 	test/test-bootstrap.rb
