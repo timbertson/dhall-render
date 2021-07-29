@@ -78,20 +78,61 @@ There's also the `fix` attribute, which is the (not stable but handy) [./mainten
 
 When working on dhall libraries, it's common to want to develop against a local copy while making changes.
 
-There's no good workflow for this built into dhall, so `dhall-render` provides a utility script (`dhall/local`) for this purpose.
+There's no good workflow for this built into dhall, so `dhall-render` provides a utility script (`dhall/local`) for this purpose. You should use dhall > 1.40.0, as prior versions will silently fall back to the public version if there is a type error in your local version.
 
-To set up a local version of a `Foo.dhall` file, create a `Foo.dhall.local` file next to it, with the same structure as `Foo.dhall` but using local imports.
+To conditionally import either the local or public version of a library, you can use this pattern:
 
-Then, to use it:
+```dhall
+let Dependency =
+        (\(local : Bool) -> ../local-directory/package.dhall ? local "import failed")
+          env:DHALL_LOCAL
+      ? https://example.org/package.dhall
+```
+
+And then run whatever you need as a subcommand of `dhall/local`:
 
 ```
 ./dhall/local ./dhall/render
 ```
 
-This finds all `*.dhall.local` files, and _temporarily_ replaces the corresponding `*.dhall` file, then runs the supplied command (in this case `dhall/render`, but it could be anything).
+This will run the command with `DHALL_LOCAL` set to `True`.
 
-Upon termination, it restores the original `*.dhall` files, so it should result in no actual changes to your workspace.
-Note that it does actually move files around on disk so the effects will be observed by all running processes, not just the one you specify.
+**Use in libraries**:
+
+If you're using this pattern in a library, you may prefer to scope this code (so that someone can use `local` to import your code, without also needing your dependencies available locally):
+
+```dhall
+let Dependency =
+        (\(local : Bool) -> ../local-directory/package.dhall ? local "import failed")
+          env:DHALL_LOCAL_MYLIB
+      ? https://example.org/package.dhall
+```
+
+The `DHALL_LOCAL_MYLIB` environment variable will only be set if the user opts in by passing the `mylib` scope to the `local` script, i.e.:
+
+```
+./dhall/local -s mylib ./dhall/render
+```
+
+Multiple scopes should be comma-separated in a single argument, e.g. `./dhall/local -s foo,bar,baz ./dhall/render`
+
+**Error reporting**:
+
+Note that if the local import fails to load (a missing file, type error, etc), you will unfortunately
+not get the full error, you will only get:
+
+```
+  Error: Not a function
+
+      local "import failed"
+```
+
+When this happens you'll need to manually try to evaluate the local version in isolation to see the real error, e.g. `dhall ../local-directory/package.dhall`.
+
+
+**Use outside the terminal**:
+
+If you need to integrate this into your editor or other environment, you can manually export `DHALL_LOCAL=True` (or `DHALL_LOCAL_<SCOPENAME>=True` for specific scopes).
 
 ## How do I get more details about type errors?
 
