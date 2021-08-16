@@ -7,7 +7,7 @@ function main {
 		curl -sSL -H 'Cache-Control: no-cache' "$@"
 	}
 
-	BASE="https://raw.githubusercontent.com/timbertson/dhall-render"
+	BASE="https://raw.githubusercontent.com/SebastianKG/dhall-render"
 
 	if [ -e "$files_path" ]; then
 		echo >&2 "Note: $files_path already exists, reusing it"

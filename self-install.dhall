@@ -49,7 +49,7 @@ let local = Tree.Executable::{ contents = ./maintenance/local as Text }
 let documentation =
       [ "## Dhall-based file generation"
       , ""
-      , "This project uses [dhall-render](https://github.com/timbertson/dhall-render) to generate a number of files."
+      , "This project uses [dhall-render](https://github.com/SebastianKG/dhall-render) to generate a number of files."
       , "Below are common commands to manage these files:"
       , ""
       , " - `dhall/render`: re-render all files defined in dhall/files.dhall"
