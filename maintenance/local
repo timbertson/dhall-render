@@ -1,28 +1,106 @@
 #!/usr/bin/env bash
 set -eu
-#
+set -o pipefail
+
 # This script enables local imports using the following pattern:
 #
-# let Dependency =
-#         (\(local : Bool) -> ../dependency/package.dhall ? local "import failed")
-#           env:DHALL_LOCAL
-#       ? https://(...)
+# $ cat local.dhall
+# toMap { DHALL_FOO = "./foo-local.dhall" }
+#
+# $ cat files.dhall
+# let Foo = env:DHALL_FOO ? https://(...)
 #
 # See the dhall-render readme for full details:
 # https://github.com/timbertson/dhall-render#readme
 
+function dhall_expr_of_file {
+	if [[ $1 == /* || $1 == *://* ]]; then
+		# absolute or URL
+		echo "$1"
+	else
+		# relative
+		echo "./$1"
+	fi
+}
+
+function bake_relative_path {
+	if [[ $1 == ./* ]]; then
+		echo "$(dirname "$1")/$2"
+	else
+		echo "$2"
+	fi
+}
+
+
 SCOPES=()
+ENV_FILES=()
+here="$(cd "$(dirname "$0")" && pwd)"
+DEFAULT_ENV_FILE="$here/local.dhall"
+
+function env_file_lines {
+	echo >&2 "[ loading env file: $1 ]"
+	ENV_MAP="$(env DHALL_LOCAL_ROOT="$here" dhall --plain --file "$1")"
+	# now format this Map Text Text into something trivial for bash to parse
+	# (we could use dhall-bash, but that's another dependency)
+	echo '
+		let Location = < Environment : Text | Local : Text | Missing | Remote : Text >
+		let Entry = { mapKey: Text, mapValue: Location }
+		let formatEnv = \(kvs: List Entry) ->
+			List/fold
+				Entry
+				kvs
+				Text
+				(\(elem: Entry) -> \(acc: Text) ->
+					let locationText = merge {
+						, Environment = \(name: Text) -> "env:${name}"
+						, Local = \(path: Text) -> path
+						, Remote = \(path: Text) -> path
+						, Missing = "missing"
+					} elem.mapValue
+					in
+					acc ++ elem.mapKey ++ "=" ++ locationText ++ "\n"
+			) ""
+
+		in formatEnv '"( $ENV_MAP )" | dhall text
+}
+
 while [ "$#" -gt 0 ]; do
 	if [ "x$1" = "x-s" ]; then
 		IFS=',' read -r -a SCOPES <<< "$(echo "$2" | tr '[:lower:]' '[:upper:]')"
+		shift 2
+	elif [ "x$1" = "x-e" ]; then
+		ENV_FILES+=("$2")
 		shift 2
 	else
 		break
 	fi
 done
 
-export DHALL_LOCAL=True
+if [ "${#ENV_FILES[@]}" -eq 0 -a -e "$DEFAULT_ENV_FILE" ]; then
+	ENV_FILES+=("$DEFAULT_ENV_FILE")
+fi
+
+ENVS=("DHALL_LOCAL=True")
 for scope in ${SCOPES[@]+${SCOPES[@]}}; do
-	eval "export DHALL_LOCAL_$scope=True"
+	ENVS+=("DHALL_LOCAL_$scope=True")
 done
-exec "$@"
+
+# make a pretty version of envs without the implicit fallback code
+ENVS_PP=("${ENVS[@]}")
+for ENV_FILE in "${ENV_FILES[@]+${ENV_FILES[@]}}"; do
+	# Load into new vars because read replaces existing array
+	LINES="$(env_file_lines "$ENV_FILE")"
+	NEW_VARS=()
+	IFS=$'\n' read -d '' -r -a NEW_VARS <<< "$(echo "$LINES")" || true
+	ENVS_PP+=("${NEW_VARS[@]+${NEW_VARS[@]}}")
+	for NEW_VAR in "${NEW_VARS[@]+${NEW_VARS[@]}}"; do
+		KEY="${NEW_VAR%%=*}"
+		VALUE="${NEW_VAR#*=}"
+		ENVS+=("$KEY=($VALUE) ? "$'\n'"\"importing env:${KEY} failed; evaluate it directly for the underlying error\" true")
+		echo >&2 "[ $KEY=$VALUE ]"
+	done
+done
+
+# set -x
+# echo >&2 "[ exec: env ${ENVS[@]} $@ ]"
+exec env "${ENVS[@]}" "$@"

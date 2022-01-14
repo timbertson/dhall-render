@@ -80,59 +80,39 @@ When working on dhall libraries, it's common to want to develop against a local 
 
 There's no good workflow for this built into dhall, so `dhall-render` provides a utility script (`dhall/local`) for this purpose. You should use dhall > 1.40.0, as prior versions will silently fall back to the public version if there is a type error in your local version.
 
-To conditionally import either the local or public version of a library, you can use this pattern:
+Firstly, you'll need a local configuration file. This is a `Map Text Location`. The keys are environment variables, and the values are locations, as produced by the `./path/to/file.dhall as Location` syntax.
+
+To use it, you pair a `local.dhall` file like this:
 
 ```dhall
-let Dependency =
-        (\(local : Bool) -> ../local-directory/package.dhall ? local "import failed")
-          env:DHALL_LOCAL
-      ? https://example.org/package.dhall
+-- dhall/local.dhall
+toMap {
+  , DHALL_PRELUDE = ../dhall-lang/Prelude/package.dhall as Location
+}
 ```
 
-And then run whatever you need as a subcommand of `dhall/local`:
+... and then in whatever file you want to use this, you use `env:DHALL_PRELUDE` with a fallback to the canonical version:
 
-```
-./dhall/local ./dhall/render
-```
-
-This will run the command with `DHALL_LOCAL` set to `True`.
-
-**Use in libraries**:
-
-If you're using this pattern in a library, you may prefer to scope this code (so that someone can use `local` to import your code, without also needing your dependencies available locally):
 
 ```dhall
-let Dependency =
-        (\(local : Bool) -> ../local-directory/package.dhall ? local "import failed")
-          env:DHALL_LOCAL_MYLIB
-      ? https://example.org/package.dhall
+-- dhall/files.dhall
+let Prelude = env:DHALL_PRELUDE ? https://prelude.dhall-lang.org/v21.1.0/package.dhall
+in ...
 ```
 
-The `DHALL_LOCAL_MYLIB` environment variable will only be set if the user opts in by passing the `mylib` scope to the `local` script, i.e.:
+Running `dhall --file dhall/files.dhall` will use the online version of the prelude, since `env:DHALL_PRELUDE` can't be resolved. But you can easily use your local checkout (without altering any files) by running it as a subcommand of the `local` script:
 
-```
-./dhall/local -s mylib ./dhall/render
-```
-
-Multiple scopes should be comma-separated in a single argument, e.g. `./dhall/local -s foo,bar,baz ./dhall/render`
-
-**Error reporting**:
-
-Note that if the local import fails to load (a missing file, type error, etc), you will unfortunately
-not get the full error, you will only get:
-
-```
-  Error: Not a function
-
-      local "import failed"
+```dhall
+./dhall/local dhall --file dhall/files.dhall
 ```
 
-When this happens you'll need to manually try to evaluate the local version in isolation to see the real error, e.g. `dhall ../local-directory/package.dhall`.
+This will run an arbitrary command with the environment you declared (in this case, DHALL_PRELUDE=../dhall-lang/Prelude/package.dhall), causing it to be used instead of the online prelude in the example above.
 
+You can explicitly pass `-e dhall/local.dhall` to specify the environment file, by default the file named `local.dhall` in the directory containing the `local` script is used (if present).
 
-**Use outside the terminal**:
+**Locations**:
 
-If you need to integrate this into your editor or other environment, you can manually export `DHALL_LOCAL=True` (or `DHALL_LOCAL_<SCOPENAME>=True` for specific scopes).
+Currently, only relative paths (and absolute remote URLs) are supported as locations. The use of the `Location` type instead of a plain `Text` is so that locaions can always be written relative to the `local.dhall` file, rather than depending on the directory you run the script from.
 
 ## How do I get more details about type errors?
 
