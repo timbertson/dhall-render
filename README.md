@@ -112,7 +112,7 @@ You can explicitly pass `-e dhall/local.dhall` to specify the environment file, 
 
 **Locations**:
 
-Currently, only relative paths (and absolute remote URLs) are supported as locations. The use of the `Location` type instead of a plain `Text` is so that locaions can always be written relative to the `local.dhall` file, rather than depending on the directory you run the script from.
+The use of the `Location` type instead of a plain `Text` is so that locations are always resolved relative to the `local.dhall` file, rather than depending on the directory you run the script from.
 
 ## How do I get more details about type errors?
 

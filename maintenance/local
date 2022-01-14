@@ -42,6 +42,7 @@ function env_file_lines {
 	ENV_MAP="$(env DHALL_LOCAL_ROOT="$here" dhall --plain --file "$1")"
 	# now format this Map Text Text into something trivial for bash to parse
 	# (we could use dhall-bash, but that's another dependency)
+	# The Text/replace works around a bug where dhall thinks absolute paths start with /"/"/
 	echo '
 		let Location = < Environment : Text | Local : Text | Missing | Remote : Text >
 		let Entry = { mapKey: Text, mapValue: Location }
@@ -53,8 +54,8 @@ function env_file_lines {
 				(\(elem: Entry) -> \(acc: Text) ->
 					let locationText = merge {
 						, Environment = \(name: Text) -> "env:${name}"
-						, Local = \(path: Text) -> path
-						, Remote = \(path: Text) -> path
+						, Local = \(path: Text) -> Text/replace "/\"/\"/" "/" path
+						, Remote = \(url: Text) -> url
 						, Missing = "missing"
 					} elem.mapValue
 					in

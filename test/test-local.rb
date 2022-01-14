@@ -27,6 +27,21 @@ load "maintenance/fix"
 		success: false,
 		output: /Error.* Wrong type of function argument.*mapKey = "DHALL_SHOW", mapValue = "just-a-string/m
 	},
+
+	{
+		desc: "absolute path",
+		env: File.open('test/local/local-abs.dhall', 'w') { |f|
+			f.write("toMap { DHALL_SHOW = #{Dir.pwd}/test/local/show-impl.dhall as Location }")
+			f.path
+		},
+		output: "number: 1"
+	},
+
+	{
+		desc: "loaded via absolute path",
+		env: "#{Dir.pwd}/test/local/local.dhall",
+		output: "number: 1"
+	},
 ].each do |test_case|
 	local_args = test_case.fetch(:args, [])
 	env_file = test_case.fetch(:env)
