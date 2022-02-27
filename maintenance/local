@@ -5,32 +5,13 @@ set -o pipefail
 # This script enables local imports using the following pattern:
 #
 # $ cat local.dhall
-# toMap { DHALL_FOO = "./foo-local.dhall" }
+# toMap { DHALL_FOO = ./foo-local.dhall as Location }
 #
 # $ cat files.dhall
 # let Foo = env:DHALL_FOO ? https://(...)
 #
 # See the dhall-render readme for full details:
 # https://github.com/timbertson/dhall-render#readme
-
-function dhall_expr_of_file {
-	if [[ $1 == /* || $1 == *://* ]]; then
-		# absolute or URL
-		echo "$1"
-	else
-		# relative
-		echo "./$1"
-	fi
-}
-
-function bake_relative_path {
-	if [[ $1 == ./* ]]; then
-		echo "$(dirname "$1")/$2"
-	else
-		echo "$2"
-	fi
-}
-
 
 SCOPES=()
 ENV_FILES=()
@@ -86,14 +67,11 @@ for scope in ${SCOPES[@]+${SCOPES[@]}}; do
 	ENVS+=("DHALL_LOCAL_$scope=True")
 done
 
-# make a pretty version of envs without the implicit fallback code
-ENVS_PP=("${ENVS[@]}")
 for ENV_FILE in "${ENV_FILES[@]+${ENV_FILES[@]}}"; do
 	# Load into new vars because read replaces existing array
 	LINES="$(env_file_lines "$ENV_FILE")"
 	NEW_VARS=()
 	IFS=$'\n' read -d '' -r -a NEW_VARS <<< "$(echo "$LINES")" || true
-	ENVS_PP+=("${NEW_VARS[@]+${NEW_VARS[@]}}")
 	for NEW_VAR in "${NEW_VARS[@]+${NEW_VARS[@]}}"; do
 		KEY="${NEW_VAR%%=*}"
 		VALUE="${NEW_VAR#*=}"
@@ -102,6 +80,4 @@ for ENV_FILE in "${ENV_FILES[@]+${ENV_FILES[@]}}"; do
 	done
 done
 
-# set -x
-# echo >&2 "[ exec: env ${ENVS[@]} $@ ]"
 exec env "${ENVS[@]}" "$@"
