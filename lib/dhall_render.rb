@@ -193,8 +193,10 @@ def process(path, options=DEFAULT_OPTIONS)
 				process_json(stdout)
 			rescue
 				raise if status_thread.value.success?
-			ensure
-				exit(1) unless status_thread.value.success?
+			end
+			unless status_thread.value.success?
+				puts("dhll-to-json exited with status: #{status_thread.value.inspect}")
+				exit(1)
 			end
 		end
 	else
