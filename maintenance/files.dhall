@@ -11,7 +11,7 @@ let Docker = CI.Docker.Workflow
 in  { files =
       { maintenance/update =
           Render.SelfInstall.make
-            Render.SelfInstall::{ path = "maintenance/files.dhall" }
+            Renderx.SelfInstall::{ path = "maintenance/files.dhall" }
       , `.gitattributes` = Render.TextFile::{
         , contents =
             ''

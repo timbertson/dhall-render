@@ -195,7 +195,7 @@ def process(path, options=DEFAULT_OPTIONS)
 				raise if status_thread.value.success?
 			end
 			unless status_thread.value.success?
-				puts("dhll-to-json exited with status: #{status_thread.value.inspect}")
+				puts("dhll-to-json failed: #{status_thread.value.inspect}")
 				exit(1)
 			end
 		end

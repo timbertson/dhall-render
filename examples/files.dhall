@@ -3,7 +3,8 @@ let Render = ../package.dhall
 let SomeConfigFile = { name : Text, age : Natural }
 
 let List/map =
-      https://prelude.dhall-lang.org/v16.0.0/List/map sha256:dd845ffb4568d40327f2a817eb42d1c6138b929ca758d50bc33112ef3c885680
+      https://prelude.dhall-lang.org/v16.0.0/List/map
+        sha256:dd845ffb4568d40327f2a817eb42d1c6138b929ca758d50bc33112ef3c885680
 
 let fileList =
     -- file lists are handy if you have a set of files (all the same type)
